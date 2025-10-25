@@ -1,0 +1,104 @@
+= Synchronisation von iCloud-Daten in eine andere Cloud
+Christian Plöger mail@christianploeger.de 
+0.1
+:toc: 
+:toc-title: Inhaltsverzeichnis
+:experimental:
+:icons: font
+// Platzhalter für weitere Dokumenten-Attribute
+
+== Motivation
+Verfügt man über ein Gerät des Herstellers Apple, hat man mit der iCloud eine sehr komfortable Möglichkeit, die mit diesem Gerät gemachten Bilder automatisch in die proprietäre iCloud hochzuladen.
+
+Allerdings bietet Apple im Gegensatz zu anderen Herstellern nur eine sehr geschlossene Cloud an, was aus Sicherheitsaspekten durchaus positiv zu bewerten ist. Allerdings führen die von Apple ergriffenen Sicherheitsmaßnahmen dazu, dass es sehr aufwändig ist, das Apple-Universum zu verlassen.
+
+Es gibt zwar auch eine per Internet aufrufbare Anwendung, allerdings ist diese dafür gedacht, einmal einen schnellen Überblick über die eigenen Daten zu bekommen und vielleicht einmal einzelne Dateien herunterzuladen.
+
+Apple bietet allerdings keine Möglichkeit, sämtliche Daten aus der iCloud in einer vernünftigen Verzeichnisstruktur zu exportieren. Diesem Problem hat sich die Open-Source-Community angenommen und ein entsprechendes Tool entwickelt, das auch weiterhin regelmäßig gepflegt wird.
+
+Das Tool beschränkt sich auf den Download der Daten aus der iCloud und berücksichtigt nicht den Upload in eine weitere Cloud. Ferner sind die Aufrufe für weniger technikaffine Benutzer*innen schwer nachvollziehbar.
+
+Daher habe ich mich entschieden einerseits dieses Dokument zur Verfügung zu stellen in dem ich meinen Lösungsansatz beschreibe. Um den Komfort der Benutzung des Open-Source-Tools zu vereinfachen, habe ich ein Wrapper-Script geschrieben, das einerseits damit umgehen kann, dass sich die Dateinamen des Open-Source-Tools mit jeder neuen Version ändern, und zusätzlich auch die benötigten Parameter mit sinnvollen Werten vorbelegt.
+
+Diese Anleitung ist für meinen persönlichen Anwendungsfall geschrieben. Ich lade die Daten, nachdem ich sie aus der iCloud heruntergeladen habe in meine selbst gehostete Nextcloud hoch. Diese Anleitung sollte aber auch für jeden anderen Cloud-Anbieter, der einen Sync-Client für Windows anbietet, funktionieren.
+
+NOTE: Um die Anleitung nicht unnötig lang zu gestalten, wird davon ausgegangen, dass der Sync-Client für die gewünschte Ziel-Cloud bereits installiert ist und die Synchronisation zwischen dem Windows-Client und der Ziel-Cloud funktioniert.
+
+== Vorbereitungen für den ersten Sync
+Vor dem ersten Start eines Syncs müssen wenige vorbereitende Schritte erledigt werden.
+
+=== Anlage eines leeren Ordners für die Ziel-Cloud
+Um jegliche Überschneidungen mit eventuell bereits in der Ziel-Cloud vorhandenen Daten zu vermeiden, wird als erstes ein leerer Ordner innerhalb des Synchronisationsverzeichnisses angelegt.
+
+Wo genau man diesen Ordner anlegt und wie man ihn benennt ist jedem selbst überlassen. Ich lege den Ordner normalerweise auf der obersten Ebene innerhalb des mit der Ziel-Cloud synchronisierten Verzeichnisbaumes an. Als sprechenden Namen nutze ich Backup-iCloud.
+
+=== Download des Open-Source-Tools icloud_photos_downloader
+Im nächsten Schritt muss das Open-Source-Tool icloud-photo-downloader (kurz icloudpd) bei https://github.com/icloud-photos-downloader/icloud_photos_downloader/releases/latest[Github] heruntergeladen werden.
+
+Leider sieht man auf dieser Seite erst einmal jede Menge technische Details, die im Rahmen dieser Anleitung vollkommen irrelevant sind und über die man hinweg scrollen kann.
+
+Für diese Anleitung ist lediglich der Abschnitt "Assets" wichtig. Innerhalb dieses Abschnittes sucht man sich die passende Datei icloudpd-<Version>-windows-amd64.exe.
+
+CAUTION: Screenshot einfügen
+
+Diese Datei wird heruntergeladen und im Anschluss in den zuvor erstellten leeren Ordner verschoben.
+
+=== Download meines Wrapper-Scripts
+Mein Wrapper-Skript stelle ich ebenfalls bei https://github.com/cploeger/icloud-backup/releases/download/0.1-alpha/downloadFromICloud.bat[Github] zur Verfügung. Es kann über den folgenden Link heruntergeladen werden: 
+
+Das Wrapper-Script muss nach dem erfolgreichen Download ebenfalls in den zuvor erstellten Ordner kopiert werden.
+
+WARNING: Nach dem Kopieren muss im Wrapper-Skript noch die E-Mail-Adresse angepasst werden. Es muss die E-Mail-Adresse eingetragen werden, die für die Anmeldung an der iCloud benutzt werden soll.
+
+=== Prüfen der iCloud-Voraussetzungen
+Damit das Open-Source-Tool die Daten aus der iCloud herunterladen kann, müssen zwei Parameter auf dem Apple-Gerät geprüft werden:
+
+==== Enable Access iCloud Data on the Web
+
+In den Einstellungen zur Apple-ID muss geprüft werden, ob überhaupt ein Zugriff auf die iCloud-Daten über das Internet möglich ist. Diese Einstellung ist unter menu:Settings[Apple ID > iCloud > Access iCloud Data on the Web] zu finden.
+
+==== Disable Advanced Data Protection
+
+Wenn der erweiterte Datenschutz eingeschaltet ist, sind Downloads aus der iCloud ebenfalls nicht möglich. Daher muss dieser ebenfalls deaktiviert werden. Die entsprechende Einstellung ist unter menu:Settings[Apple ID > iCloud > Advanced Data Protection] zu finden.
+
+== Die erste Synchronisation
+
+=== Voraussetzungen
+Nachdem die Vorbereitungen abgeschlossen sind, kann nun der erste Download aus der iCloud gestartet werden. Damit dieser erfolgreich sein kann, sollten folgende Informationen vor dem Start vorliegen:
+
+* Passwort für die Apple-ID
+* Apple-Gerät für den Fall das eine Zwei-Faktor-Authentifizierung genutzt wird.
+
+NOTE: Die Nutzung der Zwei-Faktor-Authentifizierung wird von mir dringend empfohlen.
+
+=== Erster Aufruf des Wrapper-Scripts
+Um den ersten Download zu starten, öffnet man am besten eine Windows-Eingabeaufforderung und navigiert dann in den Ordner, den man im Rahmen der Vorbereitungen angelegt hat. In diesem Ordner sollten sich jetzt eine Version des Open-Source-Tools und das von mir bereitgestellte Wrapper-Script befinden.
+
+Um den ersten Download zu starten, ist es jetzt lediglich erforderlich das Wrapper-Script aufzurufen. Hierzu muss der Name downloadFromICloud.bat eingegeben werden und anschließend die Eingabetaste betätigt werden.
+
+=== Erforderliche Eingaben beim ersten Aufruf des Open-Source-Tools
+Beim ersten Aufruf wird einmalig das Passwort zur Apple-ID abgefragt.
+
+Wenn das korrekte Passwort eingegeben wurde und die empfohlene Zwei-Faktor-Authentifizierung aktiviert ist, wird im zweiten Schritt der zweite Faktor abgefragt. 
+
+CAUTION: Genauer beschreiben inkl. Screenshot.
+
+Ist auch der zweite Faktor korrekt eingegeben worden, kopiert das Open-Source-Tool alle Daten aus der iCloud in das Verzeichnis. Dabei wird pro Jahr ein Unterrdner angelegt und zusätzlich dann auch ein Unterordner je Monat.
+
+[NOTE]
+====
+Das Passwort zur Apple-ID wird nach der einmaligen Eingabe gespeichert und bei späteren Synchronisationen nicht mehr abgefragt.
+
+Beim zweiten Faktor ist es normal, dass man diesen von Zeit zu Zeit neu eingeben muss. Eine genaue Aussage zu diesem Intervall ist nicht möglich, da es von Apple festgelegt wird. 
+====
+=== Synchronisation der Daten in die Ziel-Cloud
+
+Da für diese Anleitung davon ausgegangen wurde, dass die Synchronisation zwischen Windows-Client und Zielrechner funktioniert, sollten die Dateien, die vom Open-Source-Tool heruntergeladen worden sind, automatisch in die Ziel-Cloud hochgeladen werden.
+
+== Spätere Synchronisationen
+
+Auch wenn die erste Synchronisation erfolgreich gelaufen ist, enthält diese nur den Datenbestand zum Zeitpunkt der ersten Synchronisation. Da immer wieder neue Dateien dazu kommen, sollte man das Wrapper-Script regelmäßig aufrufen.
+
+TIP: Je nachdem wie intensiv das Apple-Gerät genutzt wird, sollte die Synchronisation monatlich oder bei sehr intensiver Nutzung auch wöchentlich durchgeführt werden.
+
+Sollte es bei nachfolgenden Synchronisationen zu Problemen kommen, ist es empfehlenswert, zu prüfen, ob eine neue Version des Open-Source-Tools vorhanden ist. Da Apple immer wieder Änderungen an der iCloud-Oberfläche durchführt, kann es durchaus vorkommen, dass der Download über das Open-Source-Tool nicht mehr funktioniert.
