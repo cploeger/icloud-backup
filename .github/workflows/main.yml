@@ -24,6 +24,7 @@ jobs:
     - name: asciidoctor-ghpages
       uses: manoelcampos/asciidoctor-ghpages-action@v2
       with:
+        ebook_main_adoc_file: installlation
         pdf_build: true
         # asciidoctor_params: --attribute=nofooter
         # adoc_file_ext: .ascii # default is .adoc
